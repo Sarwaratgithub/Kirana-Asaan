@@ -1,0 +1,513 @@
+import React, { useState, useEffect } from 'react';
+import { initializeApp } from 'firebase/app';
+import { 
+  getFirestore, 
+  collection, 
+  doc, 
+  setDoc, 
+  onSnapshot, 
+  getDoc,
+  addDoc, 
+  deleteDoc,
+  enableIndexedDbPersistence
+} from 'firebase/firestore';
+import { 
+  getAuth, 
+  signInWithCustomToken, 
+  signInAnonymously, 
+  onAuthStateChanged 
+} from 'firebase/auth';
+import { 
+  Layout, 
+  Book, 
+  Settings, 
+  Plus, 
+  ChevronRight, 
+  ArrowLeft, 
+  Wifi, 
+  WifiOff, 
+  Lock, 
+  Store, 
+  User as UserIcon, 
+  Trash2,
+  Clock,
+  Calendar,
+  Banknote,
+  UserPlus,
+  Search,
+  ArrowDownLeft,
+  ArrowUpRight,
+  Phone,
+  Save,
+  Loader2
+} from 'lucide-react';
+
+// Firebase Configuration
+const firebaseConfig = JSON.parse(__firebase_config);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'kirana-asaan-v5';
+
+// Offline Support
+enableIndexedDbPersistence(db).catch((err) => console.warn("Offline error:", err.code));
+
+const App = () => {
+  const [user, setUser] = useState(null);
+  const [page, setPage] = useState('login'); 
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [isAppReady, setIsAppReady] = useState(false); // New state to wait for profile load
+  
+  const [profile, setProfile] = useState({
+    shopName: 'Meri Kirana Dukaan',
+    ownerName: 'Dukandar',
+    phone: '03001234567',
+    pin: '1234'
+  });
+
+  const [customers, setCustomers] = useState([]); 
+  const [allTransactions, setAllTransactions] = useState([]); 
+  const [dailySales, setDailySales] = useState([]);
+  const [loginInput, setLoginInput] = useState({ phone: '', pin: '' });
+  const [loginError, setLoginError] = useState('');
+
+  useEffect(() => {
+    const handleStatus = () => setIsOnline(navigator.onLine);
+    window.addEventListener('online', handleStatus);
+    window.addEventListener('offline', handleStatus);
+    return () => {
+      window.removeEventListener('online', handleStatus);
+      window.removeEventListener('offline', handleStatus);
+    };
+  }, []);
+
+  useEffect(() => {
+    const initAuth = async () => {
+      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+        await signInWithCustomToken(auth, __initial_auth_token);
+      } else {
+        await signInAnonymously(auth);
+      }
+    };
+    initAuth();
+    
+    const unsubscribe = onAuthStateChanged(auth, async (u) => {
+      setUser(u);
+      if (u) {
+        // Load Profile from Firestore
+        const profileRef = doc(db, 'artifacts', appId, 'users', u.uid, 'settings', 'profile');
+        try {
+          const pSnap = await getDoc(profileRef);
+          if (pSnap.exists()) {
+            setProfile(pSnap.data());
+          }
+        } catch (e) {
+          console.error("Profile load error", e);
+        } finally {
+          setIsAppReady(true); // App is ready after checking profile
+        }
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    
+    const unsubTrans = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'transactions'), (snap) => {
+      const trans = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      setAllTransactions(trans);
+      
+      const customerMap = {};
+      trans.forEach(t => {
+        if (!customerMap[t.customerName]) {
+          customerMap[t.customerName] = { name: t.customerName, balance: 0, lastUpdate: 0 };
+        }
+        if (t.type === 'give') customerMap[t.customerName].balance += t.amount;
+        if (t.type === 'receive') customerMap[t.customerName].balance -= t.amount;
+        if (t.timestamp > customerMap[t.customerName].lastUpdate) {
+            customerMap[t.customerName].lastUpdate = t.timestamp;
+        }
+      });
+      setCustomers(Object.values(customerMap).sort((a,b) => b.lastUpdate - a.lastUpdate));
+    }, (err) => console.error("Trans Error", err));
+
+    const unsubSales = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'sales'), (snap) => {
+      setDailySales(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, (err) => console.error("Sales Error", err));
+
+    return () => { unsubTrans(); unsubSales(); };
+  }, [user]);
+
+  const handleLogin = () => {
+    // Normalizing numbers by removing spaces/dashes if any
+    const inputPhone = loginInput.phone.trim();
+    const storedPhone = profile.phone.trim();
+
+    if (inputPhone !== storedPhone) {
+      setLoginError(`Mobile Number match nahi karta. (Saved: ${storedPhone})`);
+      return;
+    }
+    if (loginInput.pin !== profile.pin) {
+      setLoginError('Ghalat PIN!');
+      return;
+    }
+    setPage('dashboard');
+    setLoginError('');
+  };
+
+  const saveProfile = async () => {
+    if (!user) return;
+    setSaveLoading(true);
+    try {
+      await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'profile'), profile);
+      setSaveLoading(false);
+      // Custom success message UI logic can go here
+      setPage('dashboard');
+    } catch (error) {
+      console.error("Save Error", error);
+      setSaveLoading(false);
+    }
+  };
+
+  const addCashSale = async (amount) => {
+    if (!user || !amount) return;
+    await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'sales'), {
+      amount: parseFloat(amount),
+      date: new Date().toISOString().split('T')[0],
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      timestamp: Date.now()
+    });
+    setPage('dashboard');
+  };
+
+  const addTransaction = async (name, amount, type) => {
+    if (!user || !name || !amount) return;
+    await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'transactions'), {
+      customerName: name.trim(),
+      amount: parseFloat(amount),
+      type,
+      date: new Date().toISOString().split('T')[0],
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      timestamp: Date.now()
+    });
+    setPage(type === 'give' ? 'dashboard' : 'udhar_book');
+  };
+
+  const deleteEntry = async (col, id) => {
+    if (!user) return;
+    await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, col, id));
+  };
+
+  const today = new Date().toISOString().split('T')[0];
+  const todaySales = dailySales.filter(s => s.date === today).reduce((acc, c) => acc + c.amount, 0);
+  const totalUdhar = customers.reduce((acc, c) => acc + c.balance, 0);
+
+  const filteredCustomers = customers.filter(c => 
+    c.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const Header = ({ title, showBack = true, onBack = () => setPage('dashboard') }) => (
+    <div className="bg-green-600 text-white p-4 flex items-center justify-between shadow-md sticky top-0 z-50">
+      <div className="flex items-center">
+        {showBack && <button onClick={onBack} className="mr-4"><ArrowLeft size={24} /></button>}
+        <div>
+          <h1 className="text-lg font-bold leading-none">{title}</h1>
+          <p className="text-[10px] opacity-80 mt-1 uppercase tracking-wider">{profile.shopName}</p>
+        </div>
+      </div>
+      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold ${isOnline ? 'bg-white/20' : 'bg-red-500'}`}>
+        {isOnline ? <Wifi size={12}/> : <WifiOff size={12}/>}
+        {isOnline ? 'ONLINE' : 'OFFLINE'}
+      </div>
+    </div>
+  );
+
+  // Loading Screen while app is fetching profile
+  if (!isAppReady) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6">
+        <div className="animate-spin text-green-600 mb-4">
+          <Loader2 size={48} />
+        </div>
+        <p className="text-slate-500 font-bold animate-pulse uppercase tracking-widest text-xs">Data Load Ho Raha Hai...</p>
+      </div>
+    );
+  }
+
+  if (page === 'login') {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6">
+        <div className="bg-green-600 p-5 rounded-3xl shadow-xl mb-6 text-white transition-transform active:scale-90"><Store size={48} /></div>
+        <h1 className="text-3xl font-black text-slate-800 tracking-tighter">KIRANA ASAAN</h1>
+        <p className="text-slate-400 mb-10 italic">"{profile.shopName}"</p>
+        <div className="w-full max-w-xs space-y-4">
+          <div className="relative">
+            <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input 
+              type="tel" 
+              maxLength="11" 
+              placeholder="Mobile Number Likhein" 
+              className="w-full pl-12 pr-4 py-4 bg-white border-2 rounded-2xl outline-none focus:border-green-600" 
+              value={loginInput.phone} 
+              onChange={(e) => setLoginInput({...loginInput, phone: e.target.value.replace(/\D/g, '')})} 
+            />
+          </div>
+          <div className="relative">
+            <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input 
+              type="password" 
+              maxLength="4" 
+              placeholder="4-Digit PIN" 
+              className="w-full pl-12 pr-4 py-4 bg-white border-2 rounded-2xl outline-none text-center tracking-widest focus:border-green-600 font-black" 
+              value={loginInput.pin} 
+              onChange={(e) => setLoginInput({...loginInput, pin: e.target.value.replace(/\D/g, '')})} 
+            />
+          </div>
+          {loginError && <div className="bg-red-50 border border-red-100 p-3 rounded-xl"><p className="text-red-600 text-xs font-bold text-center">{loginError}</p></div>}
+          <button onClick={handleLogin} className="w-full bg-green-600 text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition">CHALAIN (LOGIN)</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50 pb-28 text-slate-800">
+      {page === 'dashboard' && (
+        <>
+          <div className="bg-green-600 text-white p-6 rounded-b-[40px] shadow-lg">
+            <div className="flex justify-between items-start mb-6">
+              <div className="flex items-center gap-3">
+                <div className="bg-white/20 p-2 rounded-xl"><Store size={24} /></div>
+                <div><h2 className="text-xl font-black uppercase">{profile.shopName}</h2><p className="text-xs opacity-80 italic tracking-wide font-medium">Khush Amdeed, {profile.ownerName}</p></div>
+              </div>
+              <button onClick={() => setPage('settings')} className="bg-white/20 p-2 rounded-full active:scale-90 transition"><Settings size={20} /></button>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div onClick={() => setPage('today_sales_list')} className="bg-white/10 p-4 rounded-2xl border border-white/20 active:bg-white/20 transition">
+                <p className="text-[10px] uppercase font-bold opacity-70">Aaj Ki Sale</p>
+                <p className="text-xl font-black">Rs. {todaySales}</p>
+              </div>
+              <div onClick={() => setPage('udhar_book')} className="bg-white/10 p-4 rounded-2xl border border-white/20 active:bg-white/20 transition">
+                <p className="text-[10px] uppercase font-bold opacity-70">Total Udhar</p>
+                <p className="text-xl font-black text-red-100 font-mono tracking-tighter">Rs. {totalUdhar}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4 space-y-4">
+            <div onClick={() => setPage('udhar_book')} className="bg-white p-5 rounded-2xl flex items-center justify-between shadow-sm border border-slate-100 active:bg-slate-50 transition">
+              <div className="flex items-center gap-4">
+                <div className="bg-red-50 p-3 rounded-xl text-red-600"><Book /></div>
+                <div><h3 className="font-bold">Udhar Khata Book</h3><p className="text-xs text-slate-400">{customers.length} Customers List</p></div>
+              </div>
+              <ChevronRight className="text-slate-300" />
+            </div>
+          </div>
+
+          <div className="fixed bottom-24 left-0 right-0 px-6 flex gap-3 z-40">
+            <button onClick={() => setPage('cash_entry')} className="flex-1 bg-green-600 text-white py-4 rounded-2xl shadow-xl font-black flex items-center justify-center gap-2 active:scale-95 transition border-b-4 border-green-800"><Banknote size={20}/> CASH SALE</button>
+            <button onClick={() => setPage('udhar_entry')} className="flex-1 bg-red-600 text-white py-4 rounded-2xl shadow-xl font-black flex items-center justify-center gap-2 active:scale-95 transition border-b-4 border-red-800"><UserPlus size={20}/> UDHAR DIYA</button>
+          </div>
+        </>
+      )}
+
+      {page === 'udhar_book' && (
+        <>
+          <Header title="Udhar Khata Book" />
+          <div className="p-4 space-y-4">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <input 
+                type="text" 
+                placeholder="Naam se dhoondein..." 
+                className="w-full pl-12 pr-4 py-4 bg-white border border-slate-100 rounded-2xl shadow-sm outline-none focus:border-red-500"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-3">
+              {filteredCustomers.length === 0 && <p className="text-center text-slate-400 py-10 font-medium">Koi khata nahi mila.</p>}
+              {filteredCustomers.map(c => (
+                <div key={c.name} onClick={() => { setSelectedCustomer(c); setPage('customer_detail'); }} className="bg-white p-4 rounded-2xl flex items-center justify-between shadow-sm border border-slate-100 active:bg-slate-50 transition">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-red-50 w-12 h-12 rounded-full flex items-center justify-center text-red-600 font-black text-xl shadow-inner">{c.name.charAt(0).toUpperCase()}</div>
+                    <div>
+                      <h3 className="font-bold text-slate-800">{c.name}</h3>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Updated: {new Date(c.lastUpdate).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className={`font-black text-lg ${c.balance > 0 ? 'text-red-600' : 'text-green-600'}`}>Rs. {Math.abs(c.balance)}</p>
+                    <p className="text-[9px] font-black uppercase opacity-50">{c.balance > 0 ? 'Lena hai' : 'Hisaab barabar'}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {page === 'customer_detail' && selectedCustomer && (
+        <>
+          <Header title={selectedCustomer.name} onBack={() => setPage('udhar_book')} />
+          <div className="p-4 space-y-4">
+            <div className="bg-white p-6 rounded-3xl text-center shadow-sm border border-slate-100">
+               <p className="text-xs font-bold text-slate-400 uppercase mb-1">Total Balance</p>
+               <h2 className={`text-4xl font-black ${selectedCustomer.balance > 0 ? 'text-red-600' : 'text-green-600'}`}>Rs. {selectedCustomer.balance}</h2>
+               <div className="flex gap-2 mt-6">
+                  <button onClick={() => setPage('udhar_entry')} className="flex-1 bg-red-50 text-red-600 py-3 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 transition"><ArrowUpRight size={16}/> Udhar Diya</button>
+                  <button onClick={() => setPage('receive_entry')} className="flex-1 bg-green-50 text-green-600 py-3 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 transition"><ArrowDownLeft size={16}/> Paise Mile</button>
+               </div>
+            </div>
+
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest ml-2">History</h3>
+            <div className="space-y-2">
+              {allTransactions.filter(t => t.customerName === selectedCustomer.name).sort((a,b) => b.timestamp - a.timestamp).map(t => (
+                <div key={t.id} className="bg-white p-4 rounded-xl flex items-center justify-between border border-slate-50 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-lg ${t.type === 'give' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
+                      {t.type === 'give' ? <ArrowUpRight size={14}/> : <ArrowDownLeft size={14}/>}
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase">{t.date} • {t.time}</p>
+                      <p className="font-bold text-slate-700">{t.type === 'give' ? 'Udhar Diya' : 'Paise Wapis Mile'}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <p className={`font-black ${t.type === 'give' ? 'text-red-600' : 'text-green-600'}`}>Rs. {t.amount}</p>
+                    <button onClick={() => deleteEntry('transactions', t.id)} className="text-slate-200 hover:text-red-500 p-2 transition"><Trash2 size={16}/></button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {page === 'settings' && (
+        <>
+          <Header title="Shop Profile" />
+          <div className="p-4 space-y-6">
+            <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-5">
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Dukan Ka Naam</label>
+                <div className="relative">
+                  <Store size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300" />
+                  <input type="text" value={profile.shopName} onChange={(e) => setProfile({...profile, shopName: e.target.value})} className="w-full pl-10 pr-4 py-3 border rounded-xl font-bold focus:border-green-600 outline-none" placeholder="Dukan ka naam..." />
+                </div>
+              </div>
+              
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Shop Keeper Ka Naam</label>
+                <div className="relative">
+                  <UserIcon size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300" />
+                  <input type="text" value={profile.ownerName} onChange={(e) => setProfile({...profile, ownerName: e.target.value})} className="w-full pl-10 pr-4 py-3 border rounded-xl font-bold focus:border-green-600 outline-none" placeholder="Apna naam..." />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Login Mobile Number</label>
+                <div className="relative">
+                  <Phone size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300" />
+                  <input type="tel" maxLength="11" value={profile.phone} onChange={(e) => setProfile({...profile, phone: e.target.value.replace(/\D/g, '')})} className="w-full pl-10 pr-4 py-3 border rounded-xl font-bold focus:border-green-600 outline-none" placeholder="03000000000" />
+                </div>
+                <p className="text-[9px] text-slate-400 italic mt-1 font-medium">* Login ke waqt isi number ka hona zaruri hai.</p>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Security PIN (4 Digit)</label>
+                <div className="relative">
+                  <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300" />
+                  <input type="password" maxLength="4" value={profile.pin} onChange={(e) => setProfile({...profile, pin: e.target.value.replace(/\D/g, '')})} className="w-full pl-10 pr-4 py-3 border rounded-xl font-bold focus:border-green-600 outline-none tracking-widest" placeholder="4 Digit PIN" />
+                </div>
+              </div>
+
+              <button 
+                onClick={saveProfile} 
+                disabled={saveLoading}
+                className="w-full bg-green-600 text-white py-4 rounded-2xl font-black shadow-lg flex items-center justify-center gap-2 active:scale-95 transition disabled:opacity-50 border-b-4 border-green-800"
+              >
+                {saveLoading ? 'DATA SAVE HO RAHA HAI...' : <><Save size={20}/> SAVE SETTINGS</>}
+              </button>
+            </div>
+            
+            <div className="bg-red-50 p-4 rounded-2xl border border-red-100">
+               <p className="text-[10px] font-black text-red-400 uppercase text-center mb-3">Login se bahar nikalne ke liye</p>
+               <button onClick={() => setPage('login')} className="w-full bg-white text-red-600 py-3 rounded-xl font-bold border border-red-200 shadow-sm active:scale-95 transition">LOGOUT</button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Shared Entry Pages */}
+      {page === 'cash_entry' && (
+        <>
+          <Header title="Cash Sale (Naqad)" />
+          <div className="p-6 text-center space-y-6">
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Kitne Paise Mile? (Rs.)</label>
+            <input id="c_amt" type="number" placeholder="0" className="w-full p-8 border-2 rounded-[40px] text-5xl font-black text-center text-green-600 outline-none focus:border-green-600 shadow-inner" autoFocus />
+            <button onClick={() => addCashSale(document.getElementById('c_amt').value)} className="w-full bg-green-600 text-white py-6 rounded-[30px] font-black text-xl shadow-xl border-b-4 border-green-800 active:scale-95 transition">SAVE SALE</button>
+          </div>
+        </>
+      )}
+
+      {page === 'udhar_entry' && (
+        <>
+          <Header title="Udhar Diya" />
+          <div className="p-6 space-y-6">
+            <input id="u_name" type="text" placeholder="Customer ka naam likhein..." defaultValue={selectedCustomer?.name || ''} className="w-full p-5 border-2 rounded-2xl font-bold outline-none focus:border-red-600" />
+            <input id="u_amt" type="number" placeholder="Rs. Kitna udhar diya?" className="w-full p-5 border-2 rounded-2xl text-2xl font-black text-red-600 outline-none focus:border-red-600" />
+            <button onClick={() => addTransaction(document.getElementById('u_name').value, document.getElementById('u_amt').value, 'give')} className="w-full bg-red-600 text-white py-5 rounded-2xl font-black text-xl shadow-xl uppercase tracking-wider border-b-4 border-red-800 active:scale-95 transition">Add to Khata</button>
+          </div>
+        </>
+      )}
+
+      {page === 'receive_entry' && (
+        <>
+          <Header title="Paise Mile" />
+          <div className="p-6 space-y-6 text-center">
+            <h2 className="font-black text-slate-400 uppercase text-xs tracking-widest">{selectedCustomer?.name} se paise mile</h2>
+            <input id="r_amt" type="number" placeholder="0" className="w-full p-8 border-2 rounded-[40px] text-5xl font-black text-center text-green-600 outline-none shadow-inner focus:border-green-600" autoFocus />
+            <button onClick={() => addTransaction(selectedCustomer.name, document.getElementById('r_amt').value, 'receive')} className="w-full bg-green-600 text-white py-6 rounded-[30px] font-black text-xl shadow-xl border-b-4 border-green-800 active:scale-95 transition">SAVE PAYMENT</button>
+          </div>
+        </>
+      )}
+
+      {page === 'today_sales_list' && (
+        <>
+          <Header title="Aaj Ki Sale" />
+          <div className="p-4 space-y-3">
+             <div className="bg-green-50 p-6 rounded-3xl text-center border border-green-100 shadow-sm">
+                <p className="text-xs font-bold text-green-600 uppercase">Total Sale</p>
+                <h2 className="text-4xl font-black text-green-700">Rs. {todaySales}</h2>
+             </div>
+             {dailySales.filter(s => s.date === today).sort((a,b) => b.timestamp - a.timestamp).map(s => (
+                <div key={s.id} className="bg-white p-4 rounded-2xl flex items-center justify-between border border-slate-100 shadow-sm">
+                   <div className="flex items-center gap-3">
+                      <div className="bg-slate-50 p-2 rounded text-slate-400"><Clock size={16}/></div>
+                      <p className="font-black text-slate-700">Rs. {s.amount} <span className="text-[10px] text-slate-300 ml-2 uppercase font-medium">{s.time}</span></p>
+                   </div>
+                   <button onClick={() => deleteEntry('sales', s.id)} className="text-slate-200 hover:text-red-500 p-2 transition"><Trash2 size={18}/></button>
+                </div>
+             ))}
+             {dailySales.filter(s => s.date === today).length === 0 && <p className="text-center text-slate-300 py-10 font-bold italic">Abhi tak koi sale nahi hui.</p>}
+          </div>
+        </>
+      )}
+
+      {/* Nav */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-4 z-50 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
+        <button onClick={() => setPage('dashboard')} className={`flex flex-col items-center transition ${page === 'dashboard' ? 'text-green-600 scale-110' : 'text-slate-300'}`}><Layout size={24} /><span className="text-[10px] mt-1 font-black">HOME</span></button>
+        <button onClick={() => setPage('udhar_book')} className={`flex flex-col items-center transition ${page === 'udhar_book' ? 'text-green-600 scale-110' : 'text-slate-300'}`}><Book size={24} /><span className="text-[10px] mt-1 font-black">KHATA</span></button>
+        <button onClick={() => setPage('settings')} className={`flex flex-col items-center transition ${page === 'settings' ? 'text-green-600 scale-110' : 'text-slate-300'}`}><Settings size={24} /><span className="text-[10px] mt-1 font-black">SETTING</span></button>
+      </div>
+    </div>
+  );
+};
+
+export default App;
