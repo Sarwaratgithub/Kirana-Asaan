@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Layout } from "@/components/layout";
 import { useSales, useCreateSale } from "@/hooks/use-sales";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";

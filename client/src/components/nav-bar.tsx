@@ -41,32 +41,24 @@ export function NavBar() {
       {/* Bottom Navigation for Mobile */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t pb-safe">
         <div className="flex justify-around items-center h-16">
-          <Link href="/">
-            <a className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/') ? 'text-primary' : 'text-muted-foreground hover:text-gray-600'}`}>
-              <Home className={`h-6 w-6 ${isActive('/') ? 'fill-current' : ''}`} />
-              <span className="text-[10px] font-medium">Home</span>
-            </a>
+          <Link href="/" className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/') ? 'text-primary' : 'text-muted-foreground hover:text-gray-600'}`}>
+            <Home className={`h-6 w-6 ${isActive('/') ? 'fill-current' : ''}`} />
+            <span className="text-[10px] font-medium">Home</span>
           </Link>
 
-          <Link href="/customers">
-            <a className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/customers') ? 'text-primary' : 'text-muted-foreground hover:text-gray-600'}`}>
-              <Users className={`h-6 w-6 ${isActive('/customers') ? 'fill-current' : ''}`} />
-              <span className="text-[10px] font-medium">Khata</span>
-            </a>
+          <Link href="/customers" className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/customers') ? 'text-primary' : 'text-muted-foreground hover:text-gray-600'}`}>
+            <Users className={`h-6 w-6 ${isActive('/customers') ? 'fill-current' : ''}`} />
+            <span className="text-[10px] font-medium">Khata</span>
           </Link>
 
-          <Link href="/sales">
-            <a className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/sales') ? 'text-primary' : 'text-muted-foreground hover:text-gray-600'}`}>
-              <Banknote className={`h-6 w-6 ${isActive('/sales') ? 'fill-current' : ''}`} />
-              <span className="text-[10px] font-medium">Sales</span>
-            </a>
+          <Link href="/sales" className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/sales') ? 'text-primary' : 'text-muted-foreground hover:text-gray-600'}`}>
+            <Banknote className={`h-6 w-6 ${isActive('/sales') ? 'fill-current' : ''}`} />
+            <span className="text-[10px] font-medium">Sales</span>
           </Link>
 
-          <Link href="/settings">
-            <a className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/settings') ? 'text-primary' : 'text-muted-foreground hover:text-gray-600'}`}>
-              <Settings className={`h-6 w-6 ${isActive('/settings') ? 'fill-current' : ''}`} />
-              <span className="text-[10px] font-medium">Settings</span>
-            </a>
+          <Link href="/settings" className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/settings') ? 'text-primary' : 'text-muted-foreground hover:text-gray-600'}`}>
+            <Settings className={`h-6 w-6 ${isActive('/settings') ? 'fill-current' : ''}`} />
+            <span className="text-[10px] font-medium">Settings</span>
           </Link>
         </div>
       </nav>
