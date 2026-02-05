@@ -1,17 +1,17 @@
-import { Switch, Route, Redirect, useLocation } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
-import NotFound from "@/pages/not-found";
+
 import LoginPage from "@/pages/login";
 import HomePage from "@/pages/home";
 import CustomersPage from "@/pages/customers";
-import CustomerDetailPage from "@/pages/customer-detail";
 import SalesPage from "@/pages/sales";
 import SettingsPage from "@/pages/settings";
+import NotFound from "@/pages/not-found";
 
 function ProtectedRoute({ component: Component }: { component: () => JSX.Element }) {
   const { user, isLoading } = useAuth();
@@ -19,8 +19,11 @@ function ProtectedRoute({ component: Component }: { component: () => JSX.Element
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
       </div>
     );
   }
@@ -43,9 +46,6 @@ function Router() {
       <Route path="/customers">
         <ProtectedRoute component={CustomersPage} />
       </Route>
-      <Route path="/customers/:id">
-        <ProtectedRoute component={CustomerDetailPage} />
-      </Route>
       <Route path="/sales">
         <ProtectedRoute component={SalesPage} />
       </Route>
@@ -57,15 +57,13 @@ function Router() {
   );
 }
 
-function App() {
+export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
         <Router />
+        <Toaster />
       </TooltipProvider>
     </QueryClientProvider>
   );
 }
-
-export default App;
