@@ -33,8 +33,13 @@ export default function SalesPage() {
   });
 
   const onSubmit = (data: z.infer<typeof saleFormSchema>) => {
-    console.log("Submitting sale data:", data);
-    createSale.mutate(data, {
+    // Convert amount to string for the backend decimal field
+    const submitData = {
+      ...data,
+      amount: String(data.amount),
+    };
+    console.log("Submitting sale data:", submitData);
+    createSale.mutate(submitData, {
       onSuccess: () => {
         setIsDialogOpen(false);
         form.reset();

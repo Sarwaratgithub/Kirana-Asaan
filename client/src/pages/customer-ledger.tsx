@@ -43,6 +43,7 @@ export default function CustomerLedgerPage() {
     if (!customerId) return;
     createTx.mutate({
       ...data,
+      amount: String(data.amount),
       customerId,
     }, {
       onSuccess: () => {

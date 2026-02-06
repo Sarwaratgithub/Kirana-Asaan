@@ -87,13 +87,17 @@ export const insertCustomerSchema = createInsertSchema(customers).omit({
   lastUpdated: true 
 });
 
-export const insertTransactionSchema = createInsertSchema(transactions).omit({ 
+export const insertTransactionSchema = createInsertSchema(transactions, {
+  amount: z.preprocess((val) => String(val), z.string()),
+}).omit({ 
   id: true, 
   userId: true,
   date: true 
 });
 
-export const insertSaleSchema = createInsertSchema(sales).omit({ 
+export const insertSaleSchema = createInsertSchema(sales, {
+  amount: z.preprocess((val) => String(val), z.string()),
+}).omit({ 
   id: true, 
   userId: true,
   date: true 
