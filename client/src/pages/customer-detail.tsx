@@ -163,7 +163,7 @@ export default function CustomerDetailPage() {
                         {tx.type === 'give' ? 'GAVE' : 'RECEIVED'}
                       </span>
                       <span className="text-xs text-muted-foreground">
-                        {format(new Date(tx.date!), "dd MMM, h:mm a")}
+                        {tx.date ? format(new Date(tx.date), "dd MMM, h:mm a") : "N/A"}
                       </span>
                     </div>
                     <p className="text-sm font-medium text-gray-900">

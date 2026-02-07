@@ -186,7 +186,7 @@ export default function CustomerLedgerPage() {
                       {tx.description || (tx.type === 'give' ? "Udhar Diya" : "Wapas Mila")}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {format(new Date(tx.createdAt!), "MMM d, h:mm a")}
+                      {tx.createdAt ? format(new Date(tx.createdAt), "MMM d, h:mm a") : "N/A"}
                     </p>
                   </div>
                   <div className="text-right">

@@ -144,7 +144,7 @@ export default function SalesPage() {
                     {sale.description || "Cash Sale"}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {format(new Date(sale.date!), "h:mm a")}
+                    {sale.date ? format(new Date(sale.date), "h:mm a") : "N/A"}
                   </p>
                 </div>
                 <span className="font-bold text-green-600 bg-green-50 px-3 py-1 rounded-full border border-green-100">
