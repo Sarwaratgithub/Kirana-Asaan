@@ -2,7 +2,7 @@
 import { db } from "./db";
 import { eq, like, desc, and } from "drizzle-orm";
 import { 
-  users, customers, transactions, sales,
+  users, customers, transactions, sales, purchases, expenses,
   type User, type InsertUser, 
   type Customer, type InsertCustomer, 
   type Transaction, type InsertTransaction, 

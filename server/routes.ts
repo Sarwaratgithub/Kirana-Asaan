@@ -138,42 +138,68 @@ export async function registerRoutes(
 
   // === Purchases ===
   app.get("/api/purchases", requireAuth, async (req, res) => {
-    const purchases = await storage.getPurchases(req.user!.id);
-    res.json(purchases);
+    try {
+      const purchases = await storage.getPurchases(req.user!.id);
+      res.json(purchases);
+    } catch (err) {
+      console.error("Error fetching purchases:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
   });
 
   app.post("/api/purchases", requireAuth, async (req, res) => {
-    const saleSchema = z.object({
-      supplierName: z.string(),
-      amount: z.string(),
-      description: z.string().optional(),
-    });
-    const input = saleSchema.parse(req.body);
-    const purchase = await storage.createPurchase({
-      ...input,
-      userId: req.user!.id
-    });
-    res.status(201).json(purchase);
+    try {
+      const purchaseSchema = z.object({
+        supplierName: z.string(),
+        amount: z.string(),
+        description: z.string().optional(),
+      });
+      const input = purchaseSchema.parse(req.body);
+      const purchase = await storage.createPurchase({
+        ...input,
+        userId: req.user!.id
+      });
+      res.status(201).json(purchase);
+    } catch (err) {
+      console.error("Error creating purchase:", err);
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
   });
 
   // === Expenses ===
   app.get("/api/expenses", requireAuth, async (req, res) => {
-    const expenses = await storage.getExpenses(req.user!.id);
-    res.json(expenses);
+    try {
+      const expenses = await storage.getExpenses(req.user!.id);
+      res.json(expenses);
+    } catch (err) {
+      console.error("Error fetching expenses:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
   });
 
   app.post("/api/expenses", requireAuth, async (req, res) => {
-    const expenseSchema = z.object({
-      category: z.string(),
-      amount: z.string(),
-      description: z.string().optional(),
-    });
-    const input = expenseSchema.parse(req.body);
-    const expense = await storage.createExpense({
-      ...input,
-      userId: req.user!.id
-    });
-    res.status(201).json(expense);
+    try {
+      const expenseSchema = z.object({
+        category: z.string(),
+        amount: z.string(),
+        description: z.string().optional(),
+      });
+      const input = expenseSchema.parse(req.body);
+      const expense = await storage.createExpense({
+        ...input,
+        userId: req.user!.id
+      });
+      res.status(201).json(expense);
+    } catch (err) {
+      console.error("Error creating expense:", err);
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
   });
   
   // === Profile Update ===
