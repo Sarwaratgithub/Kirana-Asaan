@@ -5,17 +5,17 @@
 @tailwind utilities;
 
 :root {
-  --background: 0 0% 100%;
-  --foreground: 158 42% 18%;
+  --background: 210 40% 98%;
+  --foreground: 222 47% 11%;
   
   --primary: 142 76% 36%;
   --primary-foreground: 355 100% 97%;
   
-  --secondary: 142 30% 95%;
+  --secondary: 142 30% 90%;
   --secondary-foreground: 142 76% 36%;
   
-  --muted: 160 20% 96%;
-  --muted-foreground: 158 20% 45%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 16% 47%;
   
   --accent: 38 92% 50%;
   --accent-foreground: 355 100% 97%;
@@ -23,11 +23,11 @@
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 98%;
 
-  --border: 160 15% 90%;
-  --input: 160 15% 90%;
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
   --ring: 142 76% 36%;
   
-  --radius: 0.75rem;
+  --radius: 1rem;
 
   --sidebar-background: 0 0% 98%;
   --sidebar-foreground: 240 5.3% 26.1%;
@@ -101,16 +101,25 @@
     box-shadow: 0 4px 0 0 hsl(var(--primary) / 0.2), 0 8px 16px -4px hsl(var(--primary) / 0.1);
   }
   .card-3d {
-    @apply transition-all duration-200;
-    box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.1), 0 8px 8px -5px rgba(0, 0, 0, 0.04);
-    border-bottom: 4px solid rgba(0, 0, 0, 0.05);
+    @apply transition-all duration-300;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    background: linear-gradient(135deg, hsl(var(--background)), hsl(var(--secondary)));
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-bottom: 4px solid rgba(0, 0, 0, 0.1);
   }
   .card-3d:hover {
-    transform: translateY(-2px);
+    transform: translateY(-4px) scale(1.02);
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   }
   .btn-3d {
-    @apply transition-all active:translate-y-1 active:shadow-none;
-    box-shadow: 0 4px 0 0 rgba(0, 0, 0, 0.1);
+    @apply transition-all active:translate-y-1 active:shadow-none font-bold uppercase tracking-wider;
+    box-shadow: 0 4px 0 0 rgba(0, 0, 0, 0.2);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+  .neo-shadow {
+    box-shadow: 8px 8px 16px #d1d9e6, -8px -8px 16px #ffffff;
+  }
+  .dark .neo-shadow {
+    box-shadow: 8px 8px 16px #0b0e14, -8px -8px 16px #1a202c;
   }
 }
