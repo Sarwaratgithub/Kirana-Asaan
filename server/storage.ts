@@ -89,8 +89,44 @@ export class DatabaseStorage implements IStorage {
     return newCustomer;
   }
 
+  async updateCustomer(id: number, updates: Partial<InsertCustomer>): Promise<Customer> {
+    const [customer] = await db.update(customers).set({
+      ...updates,
+      lastUpdated: new Date()
+    }).where(eq(customers.id, id)).returning();
+    return customer;
+  }
+
   async deleteCustomer(id: number): Promise<void> {
+    await db.delete(transactions).where(eq(transactions.customerId, id));
     await db.delete(customers).where(eq(customers.id, id));
+  }
+
+  async updateTransaction(id: number, updates: Partial<InsertTransaction>): Promise<Transaction> {
+    const oldTx = await db.select().from(transactions).where(eq(transactions.id, id)).limit(1);
+    if (oldTx.length === 0) throw new Error("Transaction not found");
+
+    const [newTx] = await db.update(transactions).set(updates).where(eq(transactions.id, id)).returning();
+
+    // Re-calculate balance if amount or type changed
+    if (updates.amount !== undefined || updates.type !== undefined) {
+      const diff = parseFloat(oldTx[0].amount) * (oldTx[0].type === 'receive' ? -1 : 1);
+      await this.updateCustomerBalance(oldTx[0].customerId, -diff); // Reverse old
+
+      const newDiff = parseFloat(newTx.amount) * (newTx.type === 'receive' ? -1 : 1);
+      await this.updateCustomerBalance(newTx.customerId, newDiff); // Apply new
+    }
+
+    return newTx;
+  }
+
+  async deleteTransaction(id: number): Promise<void> {
+    const [tx] = await db.select().from(transactions).where(eq(transactions.id, id)).limit(1);
+    if (!tx) return;
+
+    const diff = parseFloat(tx.amount) * (tx.type === 'receive' ? -1 : 1);
+    await this.updateCustomerBalance(tx.customerId, -diff);
+    await db.delete(transactions).where(eq(transactions.id, id));
   }
 
   async updateCustomerBalance(id: number, amountChange: number): Promise<void> {

@@ -1,18 +1,21 @@
-import { useRoute } from "wouter";
+import { useRoute, useLocation } from "wouter";
 import { Layout } from "@/components/layout";
-import { useCustomers } from "@/hooks/use-customers";
-import { useTransactions, useCreateTransaction } from "@/hooks/use-transactions";
+import { useCustomers, useUpdateCustomer, useDeleteCustomer } from "@/hooks/use-customers";
+import { useTransactions, useCreateTransaction, useDeleteTransaction } from "@/hooks/use-transactions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Loader2, ArrowLeft, Plus, TrendingDown, TrendingUp, History } from "lucide-react";
+import { Loader2, ArrowLeft, Plus, TrendingDown, TrendingUp, History, Trash2, Pencil } from "lucide-react";
 import { Link } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
+import { queryClient } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/queryClient";
 
 const transactionFormSchema = z.object({
   amount: z.coerce.number().min(1, "Amount must be at least 1"),
@@ -20,15 +23,27 @@ const transactionFormSchema = z.object({
   type: z.enum(["give", "receive"]),
 });
 
+const customerEditSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  phone: z.string().optional(),
+});
+
 export default function CustomerLedgerPage() {
   const [, params] = useRoute("/customers/:id");
+  const [, setLocation] = useLocation();
   const customerId = params?.id ? Number(params.id) : null;
+  const { toast } = useToast();
 
   const { data: customers, isLoading: customerLoading } = useCustomers();
   const customer = customers?.find(c => c.id === customerId);
 
   const { data: transactions, isLoading: txLoading } = useTransactions(customerId || undefined);
   const createTx = useCreateTransaction();
+  const updateCustomer = useUpdateCustomer();
+  const deleteCustomer = useDeleteCustomer();
+  const deleteTx = useDeleteTransaction();
+
+  const [isEditCustomerOpen, setIsEditCustomerOpen] = useState(false);
 
   const form = useForm<z.infer<typeof transactionFormSchema>>({
     resolver: zodResolver(transactionFormSchema),
@@ -36,6 +51,14 @@ export default function CustomerLedgerPage() {
       amount: 0,
       description: "",
       type: "give",
+    },
+  });
+
+  const editCustomerForm = useForm<z.infer<typeof customerEditSchema>>({
+    resolver: zodResolver(customerEditSchema),
+    values: {
+      name: customer?.name || "",
+      phone: customer?.phone || "",
     },
   });
 
@@ -48,7 +71,37 @@ export default function CustomerLedgerPage() {
     }, {
       onSuccess: () => {
         form.reset();
+        toast({ title: "Entry Saved", description: "Ledger entry added successfully" });
       },
+    });
+  };
+
+  const onEditCustomer = (data: z.infer<typeof customerEditSchema>) => {
+    if (!customerId) return;
+    updateCustomer.mutate({ id: customerId, ...data }, {
+      onSuccess: () => {
+        setIsEditCustomerOpen(false);
+        toast({ title: "Updated", description: "Customer details updated" });
+      }
+    });
+  };
+
+  const handleDeleteCustomer = () => {
+    if (!customerId || !window.confirm("Are you sure? This will delete the customer and all their ledger history.")) return;
+    deleteCustomer.mutate(customerId, {
+      onSuccess: () => {
+        setLocation("/customers");
+        toast({ title: "Deleted", description: "Customer removed from Khata" });
+      }
+    });
+  };
+
+  const handleDeleteTx = (id: number) => {
+    if (!window.confirm("Delete this entry?")) return;
+    deleteTx.mutate(id, {
+      onSuccess: () => {
+        toast({ title: "Entry Deleted", description: "Ledger entry removed" });
+      }
     });
   };
 
@@ -65,15 +118,48 @@ export default function CustomerLedgerPage() {
   return (
     <Layout>
       <div className="space-y-6">
-        <div className="flex items-center gap-4">
-          <Link href="/customers">
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
-          <div>
-            <h2 className="text-2xl font-heading font-bold">{customer.name}</h2>
-            <p className="text-sm text-muted-foreground">{customer.phone}</p>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <Link href="/customers">
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-gray-100">
+                <ArrowLeft className="h-6 w-6" />
+              </Button>
+            </Link>
+            <div>
+              <h2 className="text-2xl font-heading font-black text-gray-900 leading-tight uppercase tracking-tight">{customer.name}</h2>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{customer.phone}</p>
+            </div>
+          </div>
+          
+          <div className="flex gap-2">
+            <Dialog open={isEditCustomerOpen} onOpenChange={setIsEditCustomerOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl border-gray-200">
+                  <Pencil className="h-4 w-4 text-gray-600" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Edit Customer</DialogTitle></DialogHeader>
+                <Form {...editCustomerForm}>
+                  <form onSubmit={editCustomerForm.handleSubmit(onEditCustomer)} className="space-y-4 pt-4">
+                    <FormField control={editCustomerForm.control} name="name" render={({ field }) => (
+                      <FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={editCustomerForm.control} name="phone" render={({ field }) => (
+                      <FormItem><FormLabel>Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <div className="flex gap-3 pt-2">
+                      <Button type="button" variant="destructive" className="flex-1" onClick={handleDeleteCustomer} disabled={deleteCustomer.isPending}>
+                        Delete Customer
+                      </Button>
+                      <Button type="submit" className="flex-1" disabled={updateCustomer.isPending}>
+                        Save Changes
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
@@ -192,13 +278,23 @@ export default function CustomerLedgerPage() {
                       {tx.createdAt ? format(new Date(tx.createdAt), "dd MMM • h:mm a") : "N/A"}
                     </p>
                   </div>
-                  <div className="text-right">
-                    <p className={`text-xl font-black ${tx.type === 'give' ? 'text-red-600' : 'text-green-600'}`}>
-                      {tx.type === 'give' ? '+' : '-'}Rs.{Number(tx.amount).toLocaleString()}
-                    </p>
-                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-tighter opacity-70">
-                      {tx.type === 'give' ? 'Udhar Diya' : 'Wapas Mila'}
-                    </p>
+                  <div className="text-right flex items-center gap-4">
+                    <div className="text-right">
+                      <p className={`text-xl font-black ${tx.type === 'give' ? 'text-red-600' : 'text-green-600'}`}>
+                        {tx.type === 'give' ? '+' : '-'}Rs.{Number(tx.amount).toLocaleString()}
+                      </p>
+                      <p className="text-[10px] font-black text-muted-foreground uppercase tracking-tighter opacity-70">
+                        {tx.type === 'give' ? 'Udhar Diya' : 'Wapas Mila'}
+                      </p>
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 rounded-full text-gray-300 hover:text-destructive transition-colors"
+                      onClick={() => handleDeleteTx(tx.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               ))}

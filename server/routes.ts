@@ -76,6 +76,16 @@ export async function registerRoutes(
     res.json(customer);
   });
 
+  app.patch(api.customers.get.path, requireAuth, async (req, res) => {
+    const customer = await storage.getCustomer(Number(req.params.id));
+    if (!customer || customer.userId !== req.user!.id) {
+      return res.status(404).json({ message: "Customer not found" });
+    }
+    const input = api.customers.create.input.partial().parse(req.body);
+    const updated = await storage.updateCustomer(customer.id, input);
+    res.json(updated);
+  });
+
   app.delete(api.customers.delete.path, requireAuth, async (req, res) => {
     const customer = await storage.getCustomer(Number(req.params.id));
     if (!customer || customer.userId !== req.user!.id) {
@@ -114,7 +124,31 @@ export async function registerRoutes(
     }
   });
 
-  // === Sales ===
+  app.patch("/api/transactions/:id", requireAuth, async (req, res) => {
+    const txId = Number(req.params.id);
+    const txs = await storage.getTransactions(req.user!.id);
+    const tx = txs.find(t => t.id === txId);
+    if (!tx) return res.status(404).json({ message: "Transaction not found" });
+
+    const schema = z.object({
+      amount: z.coerce.string().optional(),
+      description: z.string().optional(),
+      type: z.enum(["give", "receive"]).optional(),
+    });
+    const input = schema.parse(req.body);
+    const updated = await storage.updateTransaction(txId, input);
+    res.json(updated);
+  });
+
+  app.delete("/api/transactions/:id", requireAuth, async (req, res) => {
+    const txId = Number(req.params.id);
+    const txs = await storage.getTransactions(req.user!.id);
+    const tx = txs.find(t => t.id === txId);
+    if (!tx) return res.status(404).json({ message: "Transaction not found" });
+
+    await storage.deleteTransaction(txId);
+    res.status(200).send();
+  });
   app.get(api.sales.list.path, requireAuth, async (req, res) => {
     const sales = await storage.getSales(req.user!.id);
     res.json(sales);

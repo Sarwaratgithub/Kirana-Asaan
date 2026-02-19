@@ -134,11 +134,18 @@ export default function CustomersPage() {
                       </div>
                     </div>
                     
-                    <div className="text-right relative z-10">
-                      <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Balance</p>
-                      <p className={`font-black text-lg ${Number(customer.totalBalance) > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                        Rs.{Number(customer.totalBalance).toLocaleString()}
-                      </p>
+                    <div className="flex flex-col items-end gap-2 relative z-10">
+                      <div>
+                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Balance</p>
+                        <p className={`font-black text-lg ${Number(customer.totalBalance) > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                          Rs.{Number(customer.totalBalance).toLocaleString()}
+                        </p>
+                      </div>
+                      <Link href={`/customers/${customer.id}`}>
+                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0 rounded-full hover:bg-primary/10">
+                          <ArrowRight className="h-4 w-4 text-primary" />
+                        </Button>
+                      </Link>
                     </div>
                   </div>
                 </Card>
