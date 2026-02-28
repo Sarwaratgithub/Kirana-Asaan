@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -20,10 +20,11 @@ export default function LoginPage() {
   const { login, isLoggingIn, user } = useAuth();
   const [, setLocation] = useLocation();
 
-  if (user) {
-    setLocation("/");
-    return null;
-  }
+  useEffect(() => {
+    if (user) {
+      setLocation("/");
+    }
+  }, [user, setLocation]);
 
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -32,6 +33,10 @@ export default function LoginPage() {
       password: "",
     },
   });
+
+  if (user) {
+    return null;
+  }
 
   function onSubmit(values: z.infer<typeof loginSchema>) {
     login(values);

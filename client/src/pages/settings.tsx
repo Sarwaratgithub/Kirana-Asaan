@@ -35,7 +35,7 @@ export default function SettingsPage() {
       ownerName: data.ownerName,
       username: data.username,
     };
-    if (data.password) {
+    if (data.password && data.password.length >= 4) {
       updates.password = data.password;
     }
     updateProfile(updates);
