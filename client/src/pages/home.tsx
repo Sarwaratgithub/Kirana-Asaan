@@ -41,6 +41,11 @@ export default function HomePage() {
   const totalUdhar = customers?.reduce((sum, c) => sum + Number(c.totalBalance), 0) || 0;
 
   const recentSales = sales?.slice(0, 3) || [];
+  const recentPurchases = purchases?.slice(0, 2) || [];
+  const recentExpenses = expenses?.slice(0, 2) || [];
+  const recentLedger = [...recentPurchases.map(p => ({ ...p, ledgerType: 'purchase' as const })), ...recentExpenses.map(e => ({ ...e, ledgerType: 'expense' as const }))]
+    .sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime())
+    .slice(0, 3);
 
   const isLoading = salesLoading || customersLoading || txsLoading || purchasesLoading || expensesLoading;
 
@@ -129,41 +134,82 @@ export default function HomePage() {
           </Link>
         </div>
 
-        {/* Recent Activity */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-heading font-semibold text-lg">Recent Sales</h3>
-            <Link href="/sales" className="text-sm text-primary font-medium flex items-center gap-1">
-              View All <ArrowRight className="h-3 w-3" />
-            </Link>
+        {/* Recent Activity Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6">
+          {/* Recent Sales */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-heading font-semibold text-lg">Recent Sales</h3>
+              <Link href="/sales" className="text-sm text-primary font-medium flex items-center gap-1">
+                View All <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+
+            <div className="space-y-3">
+              {salesLoading ? (
+                [1, 2, 3].map((i) => (
+                  <div key={i} className="h-16 bg-gray-100 dark:bg-slate-800 rounded-xl animate-pulse" />
+                ))
+              ) : recentSales.length === 0 ? (
+                <div className="text-center py-8 bg-gray-50 dark:bg-slate-900/50 rounded-xl border border-dashed">
+                  <p className="text-muted-foreground text-sm">No sales yet</p>
+                </div>
+              ) : (
+                recentSales.map((sale) => (
+                  <div key={sale.id} className="bg-white dark:bg-slate-900 p-4 rounded-xl border shadow-sm flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-foreground">
+                        {sale.description || "Cash Sale"}
+                      </p>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                        {sale.date ? format(new Date(sale.date), "h:mm a") : "N/A"}
+                      </p>
+                    </div>
+                    <span className="font-bold text-green-600">
+                      +Rs.{Number(sale.amount).toLocaleString()}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
 
-          <div className="space-y-3">
-            {salesLoading ? (
-              [1, 2, 3].map((i) => (
-                <div key={i} className="h-16 bg-gray-100 rounded-xl animate-pulse" />
-              ))
-            ) : recentSales.length === 0 ? (
-              <div className="text-center py-8 bg-gray-50 rounded-xl border border-dashed">
-                <p className="text-muted-foreground text-sm">No sales recorded yet</p>
-              </div>
-            ) : (
-              recentSales.map((sale) => (
-                <div key={sale.id} className="bg-white p-4 rounded-xl border shadow-sm flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-foreground">
-                      {sale.description || "Cash Sale"}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {sale.date ? format(new Date(sale.date), "h:mm a") : "N/A"}
-                    </p>
-                  </div>
-                  <span className="font-bold text-green-600">
-                    +Rs.{Number(sale.amount).toLocaleString()}
-                  </span>
+          {/* Recent Ledger (Purchases & Expenses) */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-heading font-semibold text-lg">Recent Ledger</h3>
+              <Link href="/ledger" className="text-sm text-primary font-medium flex items-center gap-1">
+                View All <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+
+            <div className="space-y-3">
+              {isLoading ? (
+                [1, 2, 3].map((i) => (
+                  <div key={i} className="h-16 bg-gray-100 dark:bg-slate-800 rounded-xl animate-pulse" />
+                ))
+              ) : recentLedger.length === 0 ? (
+                <div className="text-center py-8 bg-gray-50 dark:bg-slate-900/50 rounded-xl border border-dashed">
+                  <p className="text-muted-foreground text-sm">No entries yet</p>
                 </div>
-              ))
-            )}
+              ) : (
+                recentLedger.map((item: any) => (
+                  <div key={`${item.ledgerType}-${item.id}`} className="bg-white dark:bg-slate-900 p-4 rounded-xl border shadow-sm flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-foreground">
+                        {'supplierName' in item ? item.supplierName : item.category}
+                      </p>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                        {item.ledgerType.toUpperCase()} • {item.date ? format(new Date(item.date), "dd MMM") : "N/A"}
+                      </p>
+                    </div>
+                    <span className="font-bold text-red-600">
+                      -Rs.{Number(item.amount).toLocaleString()}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       </div>
