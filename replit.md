@@ -29,7 +29,8 @@ The project uses a monorepo-style layout with three main directories:
 - **UI Components**: shadcn/ui (new-york style) built on Radix UI primitives with Tailwind CSS
 - **Forms**: React Hook Form with Zod resolvers for validation
 - **Styling**: Tailwind CSS with CSS custom properties for theming (green/emerald primary palette). Custom font families: Inter (body) and Outfit (headings)
-- **Design**: Mobile-first with a fixed top header, bottom navigation bar, and max-width container (`max-w-lg`)
+- **Responsive Design**: Mobile-first approach with a max-width container (`max-w-lg`) for mobile app feel, but fully functional on desktop browsers.
+- **PWA Ready**: Configured for installation as a standalone app on mobile and desktop devices.
 
 Key frontend pages:
 - Login (phone + PIN authentication)
