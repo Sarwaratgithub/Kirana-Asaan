@@ -4,7 +4,7 @@ import { useSales, useCreateSale, useUpdateSale, useDeleteSale } from "@/hooks/u
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ResponsiveModal } from "@/components/ui/responsive-modal";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Plus, Banknote, Calendar, ArrowLeft, ArrowRight, Trash2, Pencil } from "lucide-react";
 import { format, subDays, startOfDay, endOfDay, isSameDay } from "date-fns";
@@ -100,97 +100,96 @@ export default function SalesPage() {
     <Layout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-heading font-bold text-gray-900 uppercase tracking-tighter">Sales & Cash</h2>
+          <h2 className="text-2xl font-heading font-bold text-gray-900 dark:text-white uppercase tracking-tighter">Sales & Cash</h2>
           
-          <Dialog open={isDialogOpen} onOpenChange={(open) => {
-            setIsDialogOpen(open);
-            if (!open) setEditingSale(null);
-          }}>
-            <DialogTrigger asChild>
+          <ResponsiveModal
+            open={isDialogOpen}
+            onOpenChange={(open) => {
+              setIsDialogOpen(open);
+              if (!open) setEditingSale(null);
+            }}
+            title={editingSale ? "Edit Entry" : "Add Sales/Cash Entry"}
+            trigger={
               <Button size="sm" className="bg-blue-600 hover:bg-blue-700 shadow-3d btn-3d rounded-xl px-4 py-6 text-white">
                 <Plus className="h-5 w-5 mr-2" />
                 Add Entry
               </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>{editingSale ? "Edit Entry" : "Add Sales/Cash Entry"}</DialogTitle>
-              </DialogHeader>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
-                  <FormField
-                    control={form.control}
-                    name="type"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Entry Type</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select type" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="cash_sale">Daily Cash Sale</SelectItem>
-                            <SelectItem value="cash_in_hand">Cash In Hand</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="date"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Date</FormLabel>
+            }
+          >
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
+                <FormField
+                  control={form.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Entry Type</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <Input type="date" {...field} max={format(new Date(), "yyyy-MM-dd")} />
+                          <SelectTrigger className="h-12">
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
                         </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="amount"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Amount (Rs.)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            className="text-2xl h-14 font-bold" 
-                            placeholder="0" 
-                            {...field}
-                            onChange={(e) => field.onChange(e.target.value)} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Description (Optional)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g. Morning Sales, Opening Cash" {...field} value={field.value || ''} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit" className="w-full h-12 text-lg bg-blue-600 hover:bg-blue-700 text-white" disabled={createSale.isPending}>
-                    {createSale.isPending ? "Recording..." : "Save Entry"}
-                  </Button>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
+                        <SelectContent>
+                          <SelectItem value="cash_sale">Daily Cash Sale</SelectItem>
+                          <SelectItem value="cash_in_hand">Cash In Hand</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="date"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Date</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} max={format(new Date(), "yyyy-MM-dd")} className="h-12" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="amount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Amount (Rs.)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          className="text-2xl h-14 font-bold"
+                          placeholder="0"
+                          {...field}
+                          onChange={(e) => field.onChange(e.target.value)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description (Optional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. Morning Sales, Opening Cash" {...field} value={field.value || ''} className="h-12" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" className="w-full h-12 text-lg bg-blue-600 hover:bg-blue-700 text-white mt-4" disabled={createSale.isPending}>
+                  {createSale.isPending ? "Recording..." : "Save Entry"}
+                </Button>
+              </form>
+            </Form>
+          </ResponsiveModal>
         </div>
 
         {/* Date Selector */}

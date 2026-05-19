@@ -43,87 +43,85 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100 p-4">
-      <div className="w-full max-w-md space-y-8">
-        <div className="text-center space-y-2">
-          <div className="mx-auto bg-primary text-white p-4 rounded-2xl w-16 h-16 flex items-center justify-center shadow-lg shadow-primary/30 mb-6">
-            <Store className="w-8 h-8" />
+    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-6">
+      <div className="w-full max-w-sm space-y-8">
+        <div className="text-center">
+          <div className="mx-auto bg-primary p-6 rounded-[2.5rem] w-24 h-24 flex items-center justify-center shadow-2xl shadow-primary/20 mb-8 transition-transform active:scale-95 duration-500">
+            <Store className="w-12 h-12 text-white" />
           </div>
-          <h1 className="text-3xl font-heading font-bold text-gray-900 tracking-tight">
+          <h1 className="text-4xl font-heading font-black text-slate-900 tracking-tighter uppercase">
             Kirana Asaan
           </h1>
-          <p className="text-muted-foreground text-lg">
-            Apni dukaan, ab digital!
+          <p className="text-slate-400 mt-2 font-medium italic">
+            "Apni dukaan, ab digital!"
           </p>
         </div>
 
-        <Card className="border-0 shadow-xl bg-white/80 backdrop-blur">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">Login</CardTitle>
-            <CardDescription className="text-center">
-              Enter your phone number and PIN to access your shop
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="username"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Phone Number</FormLabel>
-                      <FormControl>
+        <div className="space-y-6 pt-4">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="username"
+                render={({ field }) => (
+                  <FormItem className="space-y-1">
+                    <FormControl>
+                      <div className="relative">
                         <Input 
-                          placeholder="9876543210" 
+                          placeholder="Mobile Number Likhein"
                           type="tel" 
-                          className="h-12 text-lg"
+                          className="h-16 pl-6 pr-4 bg-white border-2 border-slate-100 rounded-2xl text-lg font-bold outline-none focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
                           {...field} 
                         />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>4-Digit PIN</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="••••" 
-                          type="password" 
-                          maxLength={4}
-                          className="h-12 text-lg tracking-widest"
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                      </div>
+                    </FormControl>
+                    <FormMessage className="font-bold text-xs px-2" />
+                  </FormItem>
+                )}
+              />
 
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem className="space-y-1">
+                    <FormControl>
+                      <Input
+                        placeholder="4-Digit PIN"
+                        type="password"
+                        maxLength={4}
+                        className="h-16 bg-white border-2 border-slate-100 rounded-2xl text-center text-xl font-black tracking-[0.5em] focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage className="font-bold text-xs px-2 text-center" />
+                  </FormItem>
+                )}
+              />
+
+              <div className="pt-4">
                 <Button 
                   type="submit" 
-                  className="w-full h-12 text-lg font-semibold shadow-lg shadow-primary/25"
+                  className="w-full h-16 text-xl font-black uppercase tracking-widest shadow-xl shadow-primary/20 btn-3d rounded-2xl bg-primary hover:bg-primary/90 transition-all active:scale-[0.98]"
                   disabled={isLoggingIn}
                 >
                   {isLoggingIn ? (
                     <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Verifying...
+                      <Loader2 className="mr-3 h-6 w-6 animate-spin" />
+                      Chal raha hai...
                     </>
                   ) : (
-                    "Login to Shop"
+                    "Chalain (Login)"
                   )}
                 </Button>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
+              </div>
+            </form>
+          </Form>
+        </div>
+
+        <p className="text-center text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] pt-12">
+          Powered by Kirana Asaan
+        </p>
       </div>
     </div>
   );

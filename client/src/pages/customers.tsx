@@ -4,7 +4,7 @@ import { useCustomers, useCreateCustomer } from "@/hooks/use-customers";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ResponsiveModal } from "@/components/ui/responsive-modal";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Search, Plus, UserPlus, Phone, Loader2, ArrowRight, Users } from "lucide-react";
 import { Link } from "wouter";
@@ -41,54 +41,53 @@ export default function CustomersPage() {
     <Layout>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-heading font-bold">Udhar Khata</h2>
+          <h2 className="text-2xl font-heading font-bold text-slate-900 dark:text-white">Udhar Khata</h2>
           
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
+          <ResponsiveModal
+            open={isDialogOpen}
+            onOpenChange={setIsDialogOpen}
+            title="Add New Customer"
+            trigger={
               <Button size="sm" className="bg-primary shadow-lg shadow-primary/25">
                 <UserPlus className="h-4 w-4 mr-2" />
                 Add Customer
               </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add New Customer</DialogTitle>
-              </DialogHeader>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Customer Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="phone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Phone Number (Optional)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter phone" type="tel" {...field} value={field.value || ''} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit" className="w-full" disabled={createCustomer.isPending}>
-                    {createCustomer.isPending ? "Adding..." : "Add Customer"}
-                  </Button>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
+            }
+          >
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Customer Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter name" {...field} className="h-12" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone Number (Optional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter phone" type="tel" {...field} value={field.value || ''} className="h-12" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" className="w-full h-12 text-lg mt-4" disabled={createCustomer.isPending}>
+                  {createCustomer.isPending ? "Adding..." : "Add Customer"}
+                </Button>
+              </form>
+            </Form>
+          </ResponsiveModal>
         </div>
 
         <div className="relative group">

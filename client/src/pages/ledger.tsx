@@ -4,7 +4,7 @@ import { usePurchases, useCreatePurchase, useUpdatePurchase, useDeletePurchase, 
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ResponsiveModal } from "@/components/ui/responsive-modal";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Plus, ShoppingBag, Receipt, Calendar, Loader2, Trash2, Pencil } from "lucide-react";
 import { format } from "date-fns";
@@ -115,7 +115,7 @@ export default function LedgerPage() {
   return (
     <Layout>
       <div className="space-y-6">
-        <h2 className="text-2xl font-heading font-bold text-gray-900 uppercase tracking-tighter">Business Ledger</h2>
+        <h2 className="text-2xl font-heading font-bold text-gray-900 dark:text-white uppercase tracking-tighter">Business Ledger</h2>
 
         <div className="grid grid-cols-2 gap-4">
           <Card className="bg-primary text-white border-none card-3d overflow-hidden rounded-[2rem] ring-4 ring-primary/20">
@@ -140,41 +140,42 @@ export default function LedgerPage() {
         </div>
 
         <Tabs defaultValue="purchases" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 bg-slate-200/50 dark:bg-slate-900/50 backdrop-blur-md rounded-2xl p-1.5 shadow-inner">
+          <TabsList className="grid w-full grid-cols-2 bg-slate-200/50 dark:bg-slate-900/50 backdrop-blur-md rounded-2xl p-1.5 shadow-inner h-12">
             <TabsTrigger value="purchases" className="rounded-xl font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300">Purchases</TabsTrigger>
             <TabsTrigger value="expenses" className="rounded-xl font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-destructive data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300">Expenses</TabsTrigger>
           </TabsList>
 
           <TabsContent value="purchases" className="mt-4 space-y-4">
             <div className="flex justify-end">
-              <Dialog open={purchaseDialogOpen} onOpenChange={(open) => {
-                setPurchaseDialogOpen(open);
-                if (!open) setEditingPurchase(null);
-              }}>
-                <DialogTrigger asChild>
-                  <Button size="sm" className="bg-primary shadow-3d btn-3d rounded-xl">
-                    <Plus className="h-4 w-4 mr-2" />
+              <ResponsiveModal
+                open={purchaseDialogOpen}
+                onOpenChange={(open) => {
+                  setPurchaseDialogOpen(open);
+                  if (!open) setEditingPurchase(null);
+                }}
+                title={editingPurchase ? "Edit Purchase" : "Record Purchase"}
+                trigger={
+                  <Button size="sm" className="bg-primary shadow-3d btn-3d rounded-xl px-4 py-6">
+                    <Plus className="h-5 w-5 mr-2" />
                     Add Purchase
                   </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader><DialogTitle>{editingPurchase ? "Edit Purchase" : "Record Purchase"}</DialogTitle></DialogHeader>
-                  <Form {...purchaseForm}>
-                    <form onSubmit={purchaseForm.handleSubmit(onPurchaseSubmit)} className="space-y-4 pt-4">
-                      <FormField control={purchaseForm.control} name="supplierName" render={({ field }) => (
-                        <FormItem><FormLabel>Supplier Name</FormLabel><FormControl><Input placeholder="Enter supplier name" {...field} /></FormControl><FormMessage /></FormItem>
-                      )} />
-                      <FormField control={purchaseForm.control} name="amount" render={({ field }) => (
-                        <FormItem><FormLabel>Amount (Rs.)</FormLabel><FormControl><Input type="number" className="text-2xl h-14 font-bold" {...field} /></FormControl><FormMessage /></FormItem>
-                      )} />
-                      <FormField control={purchaseForm.control} name="description" render={({ field }) => (
-                        <FormItem><FormLabel>Description</FormLabel><FormControl><Input placeholder="Optional" {...field} /></FormControl><FormMessage /></FormItem>
-                      )} />
-                      <Button type="submit" className="w-full h-12" disabled={createPurchase.isPending}>{createPurchase.isPending ? "Saving..." : "Save Purchase"}</Button>
-                    </form>
-                  </Form>
-                </DialogContent>
-              </Dialog>
+                }
+              >
+                <Form {...purchaseForm}>
+                  <form onSubmit={purchaseForm.handleSubmit(onPurchaseSubmit)} className="space-y-4 pt-4">
+                    <FormField control={purchaseForm.control} name="supplierName" render={({ field }) => (
+                      <FormItem><FormLabel>Supplier Name</FormLabel><FormControl><Input placeholder="Enter supplier name" {...field} className="h-12" /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={purchaseForm.control} name="amount" render={({ field }) => (
+                      <FormItem><FormLabel>Amount (Rs.)</FormLabel><FormControl><Input type="number" className="text-2xl h-14 font-bold" {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={purchaseForm.control} name="description" render={({ field }) => (
+                      <FormItem><FormLabel>Description</FormLabel><FormControl><Input placeholder="Optional" {...field} className="h-12" /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <Button type="submit" className="w-full h-12 text-lg mt-4" disabled={createPurchase.isPending}>{createPurchase.isPending ? "Saving..." : "Save Purchase"}</Button>
+                  </form>
+                </Form>
+              </ResponsiveModal>
             </div>
 
             {purchasesLoading ? <div className="flex justify-center py-12"><Loader2 className="animate-spin h-10 w-10 text-primary" /></div> : (
@@ -205,34 +206,35 @@ export default function LedgerPage() {
 
           <TabsContent value="expenses" className="mt-4 space-y-4">
             <div className="flex justify-end">
-              <Dialog open={expenseDialogOpen} onOpenChange={(open) => {
-                setExpenseDialogOpen(open);
-                if (!open) setEditingExpense(null);
-              }}>
-                <DialogTrigger asChild>
-                  <Button size="sm" className="bg-destructive shadow-3d btn-3d rounded-xl text-white">
-                    <Plus className="h-4 w-4 mr-2" />
+              <ResponsiveModal
+                open={expenseDialogOpen}
+                onOpenChange={(open) => {
+                  setExpenseDialogOpen(open);
+                  if (!open) setEditingExpense(null);
+                }}
+                title={editingExpense ? "Edit Expense" : "Record Expense"}
+                trigger={
+                  <Button size="sm" className="bg-destructive shadow-3d btn-3d rounded-xl text-white px-4 py-6">
+                    <Plus className="h-5 w-5 mr-2" />
                     Add Expense
                   </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader><DialogTitle>{editingExpense ? "Edit Expense" : "Record Expense"}</DialogTitle></DialogHeader>
-                  <Form {...expenseForm}>
-                    <form onSubmit={expenseForm.handleSubmit(onExpenseSubmit)} className="space-y-4 pt-4">
-                      <FormField control={expenseForm.control} name="category" render={({ field }) => (
-                        <FormItem><FormLabel>Category</FormLabel><FormControl><Input placeholder="e.g. Rent, Bill, Salary" {...field} /></FormControl><FormMessage /></FormItem>
-                      )} />
-                      <FormField control={expenseForm.control} name="amount" render={({ field }) => (
-                        <FormItem><FormLabel>Amount (Rs.)</FormLabel><FormControl><Input type="number" className="text-2xl h-14 font-bold" {...field} /></FormControl><FormMessage /></FormItem>
-                      )} />
-                      <FormField control={expenseForm.control} name="description" render={({ field }) => (
-                        <FormItem><FormLabel>Description</FormLabel><FormControl><Input placeholder="Optional" {...field} /></FormControl><FormMessage /></FormItem>
-                      )} />
-                      <Button type="submit" className="w-full h-12 bg-destructive hover:bg-destructive/90 text-white" disabled={createExpense.isPending}>{createExpense.isPending ? "Saving..." : "Save Expense"}</Button>
-                    </form>
-                  </Form>
-                </DialogContent>
-              </Dialog>
+                }
+              >
+                <Form {...expenseForm}>
+                  <form onSubmit={expenseForm.handleSubmit(onExpenseSubmit)} className="space-y-4 pt-4">
+                    <FormField control={expenseForm.control} name="category" render={({ field }) => (
+                      <FormItem><FormLabel>Category</FormLabel><FormControl><Input placeholder="e.g. Rent, Bill, Salary" {...field} className="h-12" /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={expenseForm.control} name="amount" render={({ field }) => (
+                      <FormItem><FormLabel>Amount (Rs.)</FormLabel><FormControl><Input type="number" className="text-2xl h-14 font-bold" {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={expenseForm.control} name="description" render={({ field }) => (
+                      <FormItem><FormLabel>Description</FormLabel><FormControl><Input placeholder="Optional" {...field} className="h-12" /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <Button type="submit" className="w-full h-12 bg-destructive hover:bg-destructive/90 text-white mt-4" disabled={createExpense.isPending}>{createExpense.isPending ? "Saving..." : "Save Expense"}</Button>
+                  </form>
+                </Form>
+              </ResponsiveModal>
             </div>
 
             {expensesLoading ? <div className="flex justify-center py-12"><Loader2 className="animate-spin h-10 w-10 text-primary" /></div> : (
