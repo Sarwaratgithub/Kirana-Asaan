@@ -6,7 +6,7 @@ import { useTransactions, useCreateTransaction, useDeleteTransaction, useUpdateT
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ResponsiveModal } from "@/components/ui/responsive-modal";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Loader2, ArrowLeft, Plus, TrendingDown, TrendingUp, History, Trash2, Pencil } from "lucide-react";
 import { Link } from "wouter";
@@ -155,40 +155,41 @@ export default function CustomerLedgerPage() {
               </Button>
             </Link>
             <div>
-              <h2 className="text-2xl font-heading font-black text-gray-900 leading-tight uppercase tracking-tight">{customer.name}</h2>
+              <h2 className="text-2xl font-heading font-black text-gray-900 dark:text-white leading-tight uppercase tracking-tight">{customer.name}</h2>
               <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{customer.phone}</p>
             </div>
           </div>
           
           <div className="flex gap-2">
-            <Dialog open={isEditCustomerOpen} onOpenChange={setIsEditCustomerOpen}>
-              <DialogTrigger asChild>
+            <ResponsiveModal
+              open={isEditCustomerOpen}
+              onOpenChange={setIsEditCustomerOpen}
+              title="Edit Customer"
+              trigger={
                 <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl border-gray-200">
                   <Pencil className="h-4 w-4 text-gray-600" />
                 </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader><DialogTitle>Edit Customer</DialogTitle></DialogHeader>
-                <Form {...editCustomerForm}>
-                  <form onSubmit={editCustomerForm.handleSubmit(onEditCustomer)} className="space-y-4 pt-4">
-                    <FormField control={editCustomerForm.control} name="name" render={({ field }) => (
-                      <FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                    )} />
-                    <FormField control={editCustomerForm.control} name="phone" render={({ field }) => (
-                      <FormItem><FormLabel>Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                    )} />
-                    <div className="flex gap-3 pt-2">
-                      <Button type="button" variant="destructive" className="flex-1" onClick={handleDeleteCustomer} disabled={deleteCustomer.isPending}>
-                        Delete Customer
-                      </Button>
-                      <Button type="submit" className="flex-1" disabled={updateCustomer.isPending}>
-                        Save Changes
-                      </Button>
-                    </div>
-                  </form>
-                </Form>
-              </DialogContent>
-            </Dialog>
+              }
+            >
+              <Form {...editCustomerForm}>
+                <form onSubmit={editCustomerForm.handleSubmit(onEditCustomer)} className="space-y-4 pt-4">
+                  <FormField control={editCustomerForm.control} name="name" render={({ field }) => (
+                    <FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} className="h-12" /></FormControl><FormMessage /></FormItem>
+                  )} />
+                  <FormField control={editCustomerForm.control} name="phone" render={({ field }) => (
+                    <FormItem><FormLabel>Phone</FormLabel><FormControl><Input {...field} className="h-12" /></FormControl><FormMessage /></FormItem>
+                  )} />
+                  <div className="flex gap-3 pt-4">
+                    <Button type="button" variant="destructive" className="flex-1 h-12" onClick={handleDeleteCustomer} disabled={deleteCustomer.isPending}>
+                      Delete Customer
+                    </Button>
+                    <Button type="submit" className="flex-1 h-12" disabled={updateCustomer.isPending}>
+                      Save Changes
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </ResponsiveModal>
           </div>
         </div>
 
@@ -200,84 +201,83 @@ export default function CustomerLedgerPage() {
             </CardContent>
           </Card>
 
-          <Dialog open={!!editingTx || undefined} onOpenChange={(open) => !open && setEditingTx(null)}>
-            <DialogTrigger asChild>
-              <Button size="lg" className="h-full bg-primary btn-3d rounded-2xl flex flex-col items-center justify-center gap-2 p-4">
+          <ResponsiveModal
+            open={!!editingTx || undefined}
+            onOpenChange={(open) => !open && setEditingTx(null)}
+            title={editingTx ? "Edit Entry" : `Add Entry for ${customer.name}`}
+            trigger={
+              <Button size="lg" className="h-full bg-primary btn-3d rounded-2xl flex flex-col items-center justify-center gap-2 p-4 min-h-[5rem]">
                 <Plus className="h-6 w-6 text-white" />
                 <span className="text-xs font-black text-white uppercase tracking-wider">New Entry</span>
               </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>{editingTx ? "Edit Entry" : `Add Entry for ${customer.name}`}</DialogTitle>
-              </DialogHeader>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
-                  <FormField
-                    control={form.control}
-                    name="type"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Transaction Type</FormLabel>
-                        <FormControl>
-                          <div className="grid grid-cols-2 gap-2">
-                            <Button
-                              type="button"
-                              variant={field.value === "give" ? "destructive" : "outline"}
-                              onClick={() => field.onChange("give")}
-                              className="h-12"
-                            >
-                              <TrendingUp className="h-4 w-4 mr-2" />
-                              Udhar Diya
-                            </Button>
-                            <Button
-                              type="button"
-                              variant={field.value === "receive" ? "default" : "outline"}
-                              className={field.value === "receive" ? "bg-green-600 hover:bg-green-700" : ""}
-                              onClick={() => field.onChange("receive")}
-                            >
-                              <TrendingDown className="h-4 w-4 mr-2" />
-                              Wapas Mila
-                            </Button>
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="amount"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Amount (Rs.)</FormLabel>
-                        <FormControl>
-                          <Input type="number" className="text-2xl h-14 font-bold" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Description (Optional)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g. Rice 2kg" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit" className="w-full h-12" disabled={createTx.isPending}>
-                    {createTx.isPending ? "Saving..." : "Save Entry"}
-                  </Button>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
+            }
+          >
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
+                <FormField
+                  control={form.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Transaction Type</FormLabel>
+                      <FormControl>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button
+                            type="button"
+                            variant={field.value === "give" ? "destructive" : "outline"}
+                            onClick={() => field.onChange("give")}
+                            className="h-12"
+                          >
+                            <TrendingUp className="h-4 w-4 mr-2" />
+                            Udhar Diya
+                          </Button>
+                          <Button
+                            type="button"
+                            variant={field.value === "receive" ? "default" : "outline"}
+                            className={field.value === "receive" ? "bg-green-600 hover:bg-green-700 h-12" : "h-12"}
+                            onClick={() => field.onChange("receive")}
+                          >
+                            <TrendingDown className="h-4 w-4 mr-2" />
+                            Wapas Mila
+                          </Button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="amount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Amount (Rs.)</FormLabel>
+                      <FormControl>
+                        <Input type="number" className="text-2xl h-14 font-bold" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description (Optional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. Rice 2kg" {...field} className="h-12" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" className="w-full h-12 text-lg mt-4" disabled={createTx.isPending}>
+                  {createTx.isPending ? "Saving..." : "Save Entry"}
+                </Button>
+              </form>
+            </Form>
+          </ResponsiveModal>
         </div>
 
         <div className="space-y-4 pb-20">

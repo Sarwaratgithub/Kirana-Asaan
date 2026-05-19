@@ -150,3 +150,4 @@ export function buildUrl(path: string, params?: Record<string, string | number>)
 // Type exports
 export type LoginRequest = z.infer<typeof api.auth.login.input>;
 export type UpdateProfileRequest = z.infer<typeof api.auth.updateProfile.input>;
+export type InsertCustomer = z.infer<typeof insertCustomerSchema>;

@@ -16,7 +16,7 @@ import LedgerPage from "@/pages/ledger";
 import CustomerLedgerPage from "@/pages/customer-ledger";
 import NotFound from "@/pages/not-found";
 
-function ProtectedRoute({ component: Component }: { component: () => JSX.Element }) {
+function ProtectedRoute({ component: Component }: { component: () => JSX.Element | null }) {
   const { user, isLoading } = useAuth();
   const [, setLocation] = useLocation();
 
